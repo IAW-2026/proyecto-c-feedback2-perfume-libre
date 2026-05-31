@@ -11,3 +11,122 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum TipoResena {
+  PRODUCTO
+  VENDEDOR
+}
+
+enum EstadoResena {
+  PUBLICA
+  OCULTA
+  ELIMINADA
+}
+
+enum MotivoReporte {
+  INAPROPIADO
+  FALSO_NO_APLICA
+}
+
+enum DecisionModeracion {
+  RECHAZAR
+  OCULTAR
+  ELIMINAR
+}
+
+model UsuarioLocal {
+  clerkUserId String @id @map("clerk_user_id")
+  email       String @unique
+  nombre      String
+
+  @@map("usuarios_locales")
+}
+
+model Resena {
+  idResena     String       @id @default(uuid()) @map("id_resena")
+  idOrden      String       @map("id_orden")
+  idComprador  String       @map("id_comprador")
+  tipoResena   TipoResena   @map("tipo_resena")
+  
+  idProducto   String?      @map("id_producto")
+  idVendedor   String?      @map("id_vendedor")
+  
+  calificacion Int
+  comentario   String?
+  estado       EstadoResena @default(PUBLICA)
+
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  // Relaciones
+  imagenes     ImagenResenaProducto[]
+  reportes     ReporteResena[]
+
+  // Restricción: Una fila por reseña (producto o vendedor) por orden y comprador
+  @@unique([idOrden, idComprador, tipoResena])
+  @@map("resenas")
+}
+
+model ImagenResenaProducto {
+  idImagen  String @id @default(uuid()) @map("id_imagen")
+  idResena  String @map("id_resena")
+  url       String
+  
+  resena    Resena @relation(fields: [idResena], references: [idResena], onDelete: Cascade)
+
+  @@map("imagenes_resena_producto")
+}
+
+model ReporteResena {
+  idReporte     String        @id @default(uuid()) @map("id_reporte")
+  idResena      String        @map("id_resena")
+  motivo        MotivoReporte
+  idDenunciante String        @map("id_denunciante")
+  
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  resena        Resena        @relation(fields: [idResena], references: [idResena], onDelete: Cascade)
+  archivos      ArchivoReporte[]
+  moderaciones  ModeracionResena[]
+
+  @@map("reportes_resena")
+}
+
+model ArchivoReporte {
+  idArchivo String @id @default(uuid()) @map("id_archivo")
+  idReporte String @map("id_reporte")
+  url       String
+
+  reporte   ReporteResena @relation(fields: [idReporte], references: [idReporte], onDelete: Cascade)
+
+  @@map("archivos_reporte")
+}
+
+model ModeracionResena {
+  idModeracion String             @id @default(uuid()) @map("id_moderacion")
+  idReporte    String             @map("id_reporte")
+  decision     DecisionModeracion
+  idModerador  String             @map("id_moderador")
+  motivoAdmin  String?            @map("motivo_admin")
+  createdAt    DateTime           @default(now()) @map("created_at")
+
+  reporte      ReporteResena      @relation(fields: [idReporte], references: [idReporte], onDelete: Cascade)
+
+  @@map("moderaciones_resena")
+}
+
+model MetricasProducto {
+  idProducto           String @id @map("id_producto")
+  promedioCalificacion Float  @map("promedio_calificacion")
+  cantidadResenas      Int    @map("cantidad_resenas")
+
+  @@map("metricas_producto")
+}
+
+model MetricasVendedor {
+  idVendedor           String @id @map("id_vendedor")
+  promedioCalificacion Float  @map("promedio_calificacion")
+  cantidadResenas      Int    @map("cantidad_resenas")
+
+  @@map("metricas_vendedor")
+}
