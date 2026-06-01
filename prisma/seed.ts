@@ -15,164 +15,155 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('Iniciando el seed de la base de datos...');
 
-  const comprador1 = await prisma.usuarioLocal.upsert({
-    where: { clerkUserId: 'user_1_comprador_frecuente' },
-    update: {},
-    create: {
-      clerkUserId: 'user_1_comprador_frecuente',
-      email: 'comprador1@example.com',
-      nombre: 'Juan Comprador',
-    },
-  });
+  // Identificadores de Clerk para los usuarios de prueba (Se pueden inyectar vía .env local)
+  const CLERK_BUYER_ID = process.env.CLERK_BUYER_ID || 'user_seed_buyer';
+  const CLERK_SELLER_ID = process.env.CLERK_SELLER_ID || 'user_seed_seller';
+  const CLERK_MODERATOR_ID = process.env.CLERK_MODERATOR_ID || 'user_admin';
 
-  const comprador2 = await prisma.usuarioLocal.upsert({
-    where: { clerkUserId: 'user_2_comprador_ocasional' },
-    update: {},
-    create: {
-      clerkUserId: 'user_2_comprador_ocasional',
-      email: 'comprador2@example.com',
-      nombre: 'María Compradora',
-    },
-  });
+  // Usuarios Base
+  const users = [
+    { clerkUserId: CLERK_BUYER_ID, email: 'buyer+clerktest@iaw.com', nombre: 'Buyer Evaluador' },
+    { clerkUserId: 'user_seed_2', email: 'comprador2@test.com', nombre: 'Laura Gomez' },
+    { clerkUserId: 'user_seed_3', email: 'comprador3@test.com', nombre: 'Esteban Quito' },
+    { clerkUserId: 'user_seed_4', email: 'comprador4@test.com', nombre: 'Valeria Luna' },
+    { clerkUserId: 'user_seed_5', email: 'comprador5@test.com', nombre: 'Carlos Perez' },
+    { clerkUserId: 'user_seed_6', email: 'comprador6@test.com', nombre: 'Lucía Torres' },
+    { clerkUserId: CLERK_MODERATOR_ID, email: 'moderator+clerktest@iaw.com', nombre: 'Moderador Principal' },
+    { clerkUserId: CLERK_SELLER_ID, email: 'seller+clerktest@iaw.com', nombre: 'Seller Evaluador' },
+  ];
 
-  const denunciante = await prisma.usuarioLocal.upsert({
-    where: { clerkUserId: 'user_3_denunciante' },
-    update: {},
-    create: {
-      clerkUserId: 'user_3_denunciante',
-      email: 'denunciante@example.com',
-      nombre: 'Carlos Denunciante',
-    },
-  });
+  for (const u of users) {
+    await prisma.usuarioLocal.upsert({
+      where: { clerkUserId: u.clerkUserId },
+      update: {},
+      create: u,
+    });
+  }
 
-  const admin = await prisma.usuarioLocal.upsert({
-    where: { clerkUserId: 'user_4_admin' },
-    update: {},
-    create: {
-      clerkUserId: 'user_4_admin',
-      email: 'admin@example.com',
-      nombre: 'Super Admin',
-    },
-  });
+  // Lista de Productos (Perfumes)
+  const productos = [
+    { id: "prod_chanel_5", nombre: "Chanel No. 5" },
+    { id: "prod_dior_sauvage", nombre: "Dior Sauvage" },
+    { id: "prod_armani_code", nombre: "Armani Code" },
+    { id: "prod_paco_invictus", nombre: "Paco Rabanne Invictus" },
+    { id: "prod_carolina_good_girl", nombre: "Carolina Herrera Good Girl" },
+    { id: "prod_ysl_libre", nombre: "YSL Libre" },
+    { id: "prod_hugo_boss", nombre: "Hugo Boss Bottled" },
+    { id: "prod_versace_eros", nombre: "Versace Eros" },
+  ];
 
-  // Reseña 1: Excelente reseña de producto
-  const resenaProducto1 = await prisma.resena.create({
+  // Lista de Vendedores
+  const vendedores = [
+    { id: CLERK_SELLER_ID, nombre: "Seller Evaluador (Cuenta Real)" },
+    { id: "seller_aromas_vip", nombre: "Aromas VIP" },
+    { id: "seller_esencias", nombre: "Esencias Puras" },
+    { id: "seller_fragancias_mundo", nombre: "Fragancias del Mundo" },
+  ];
+
+  const comentariosPositivos = [
+    "Excelente fragancia, muy duradera.",
+    "Llegó en perfecto estado, original 100%.",
+    "Aroma increíble, mi favorito sin duda.",
+    "Lo compré para regalo y le encantó.",
+    "Muy buen precio para la calidad que tiene."
+  ];
+
+  const comentariosNeutros = [
+    "El aroma es rico pero no dura tanto en mi piel.",
+    "Está bien, pero esperaba algo distinto.",
+    "Relación calidad-precio aceptable."
+  ];
+
+  const comentariosNegativos = [
+    "No me gustó para nada, me da dolor de cabeza.",
+    "Parece una réplica, la fijación es nula.",
+    "Pésimo producto, no lo recomiendo."
+  ];
+
+  // Generar reseñas de productos
+  let ordenCount = 1000;
+  for (const prod of productos) {
+    // 3 a 5 reseñas por producto
+    const numResenas = Math.floor(Math.random() * 3) + 3;
+    let sumaCalif = 0;
+
+    for (let i = 0; i < numResenas; i++) {
+      const calif = Math.random() > 0.3 ? (Math.floor(Math.random() * 2) + 4) : (Math.floor(Math.random() * 3) + 1);
+      sumaCalif += calif;
+      
+      let comentario = "";
+      if (calif >= 4) comentario = comentariosPositivos[Math.floor(Math.random() * comentariosPositivos.length)];
+      else if (calif === 3) comentario = comentariosNeutros[Math.floor(Math.random() * comentariosNeutros.length)];
+      else comentario = comentariosNegativos[Math.floor(Math.random() * comentariosNegativos.length)];
+
+      await prisma.resena.create({
+        data: {
+          idOrden: `mock_order_${ordenCount++}`,
+          idComprador: users[Math.floor(Math.random() * 6)].clerkUserId,
+          tipoResena: TipoResena.PRODUCTO,
+          idProducto: prod.id,
+          calificacion: calif,
+          comentario: comentario,
+          estado: EstadoResena.PUBLICA,
+        }
+      });
+    }
+
+    await prisma.metricasProducto.upsert({
+      where: { idProducto: prod.id },
+      update: { promedioCalificacion: sumaCalif / numResenas, cantidadResenas: numResenas },
+      create: { idProducto: prod.id, promedioCalificacion: sumaCalif / numResenas, cantidadResenas: numResenas }
+    });
+  }
+
+  // Generar reseñas de vendedores
+  for (const vend of vendedores) {
+    const numResenas = Math.floor(Math.random() * 3) + 2;
+    let sumaCalif = 0;
+
+    for (let i = 0; i < numResenas; i++) {
+      const calif = Math.floor(Math.random() * 3) + 3; // 3 a 5
+      sumaCalif += calif;
+      
+      await prisma.resena.create({
+        data: {
+          idOrden: `mock_order_${ordenCount++}`,
+          idComprador: users[Math.floor(Math.random() * 6)].clerkUserId,
+          tipoResena: TipoResena.VENDEDOR,
+          idVendedor: vend.id,
+          calificacion: calif,
+          comentario: calif >= 4 ? "Excelente atención y envío rápido." : "Tardó un poco en responder pero llegó bien.",
+          estado: EstadoResena.PUBLICA,
+        }
+      });
+    }
+
+    await prisma.metricasVendedor.upsert({
+      where: { idVendedor: vend.id },
+      update: { promedioCalificacion: sumaCalif / numResenas, cantidadResenas: numResenas },
+      create: { idVendedor: vend.id, promedioCalificacion: sumaCalif / numResenas, cantidadResenas: numResenas }
+    });
+  }
+
+  // Reseña problemática y reporte
+  const resenaMala = await prisma.resena.create({
     data: {
-      idOrden: 'orden_1001',
-      idComprador: comprador1.clerkUserId,
+      idOrden: `mock_order_${ordenCount++}`,
+      idComprador: users[0].clerkUserId,
       tipoResena: TipoResena.PRODUCTO,
-      idProducto: 'prod_zapatillas_nike',
-      calificacion: 5,
-      comentario: 'Excelentes zapatillas, muy cómodas y llegaron rápido.',
-      estado: EstadoResena.PUBLICA,
-      imagenes: {
-        create: [
-          { url: 'https://placehold.co/800x600?text=Zapatillas1' },
-        ],
-      },
-    },
-  });
-
-  // Reseña 2: Mala reseña de vendedor
-  const resenaVendedor1 = await prisma.resena.create({
-    data: {
-      idOrden: 'orden_1001',
-      idComprador: comprador1.clerkUserId,
-      tipoResena: TipoResena.VENDEDOR,
-      idVendedor: 'seller_deportes_total',
-      calificacion: 2,
-      comentario: 'El vendedor tardó mucho en despachar el producto. No lo recomiendo.',
-      estado: EstadoResena.PUBLICA,
-    },
-  });
-
-  // Reseña 3: Reseña inapropiada (Para generar un reporte)
-  const resenaOfensiva = await prisma.resena.create({
-    data: {
-      idOrden: 'orden_1002',
-      idComprador: comprador2.clerkUserId,
-      tipoResena: TipoResena.PRODUCTO,
-      idProducto: 'prod_reloj_casio',
+      idProducto: "prod_chanel_5",
       calificacion: 1,
-      comentario: 'Este producto es una completa estafa y el vendedor es un IDIOTA. Peor compra de mi vida.',
-      estado: EstadoResena.PUBLICA, // Inicia pública hasta ser moderada
-    },
+      comentario: "El vendedor es un estafador y este perfume es agua pintada. IDIOTA.",
+      estado: EstadoResena.PUBLICA,
+    }
   });
 
-  // Reseña 4: Reseña que será eliminada
-  const resenaEliminada = await prisma.resena.create({
+  await prisma.reporteResena.create({
     data: {
-      idOrden: 'orden_1003',
-      idComprador: comprador1.clerkUserId,
-      tipoResena: TipoResena.VENDEDOR,
-      idVendedor: 'seller_electronica_ya',
-      calificacion: 1,
-      comentario: 'Comentario falso que ya fue moderado.',
-      estado: EstadoResena.ELIMINADA,
-    },
-  });
-
-  // Reporte de la reseña ofensiva
-  const reporte1 = await prisma.reporteResena.create({
-    data: {
-      idResena: resenaOfensiva.idResena,
+      idResena: resenaMala.idResena,
       motivo: MotivoReporte.INAPROPIADO,
-      idDenunciante: denunciante.clerkUserId,
-    },
-  });
-
-  // Moderación sobre una reseña falsa previa
-  const reporte2 = await prisma.reporteResena.create({
-    data: {
-      idResena: resenaEliminada.idResena,
-      motivo: MotivoReporte.FALSO_NO_APLICA,
-      idDenunciante: denunciante.clerkUserId,
-      archivos: {
-        create: [
-          { url: 'https://placehold.co/800x600?text=Falso' },
-        ],
-      },
-      moderaciones: {
-        create: [
-          {
-            decision: DecisionModeracion.ELIMINAR,
-            idModerador: admin.clerkUserId,
-            motivoAdmin: 'Se comprobó mediante el chat interno que la reseña era un intento de extorsión.',
-          },
-        ],
-      },
-    },
-  });
-
-  // Métricas Iniciales (Cálculos pre-generados)
-  await prisma.metricasProducto.upsert({
-    where: { idProducto: 'prod_zapatillas_nike' },
-    update: {},
-    create: {
-      idProducto: 'prod_zapatillas_nike',
-      promedioCalificacion: 5.0,
-      cantidadResenas: 1,
-    },
-  });
-
-  await prisma.metricasProducto.upsert({
-    where: { idProducto: 'prod_reloj_casio' },
-    update: {},
-    create: {
-      idProducto: 'prod_reloj_casio',
-      promedioCalificacion: 1.0, // Solo la ofensiva cuenta hasta que se oculte/elimine
-      cantidadResenas: 1,
-    },
-  });
-
-  await prisma.metricasVendedor.upsert({
-    where: { idVendedor: 'seller_deportes_total' },
-    update: {},
-    create: {
-      idVendedor: 'seller_deportes_total',
-      promedioCalificacion: 2.0,
-      cantidadResenas: 1,
-    },
+      idDenunciante: users[1].clerkUserId,
+    }
   });
 
   console.log('Seed completado con éxito. Base de datos poblada.');
