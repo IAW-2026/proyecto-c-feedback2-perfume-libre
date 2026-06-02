@@ -14,11 +14,11 @@ Para evaluar la aplicación, se pueden utilizar las siguientes credenciales de p
 - **Contraseña:** `iawuser#`
 
 # Contiene reseñas de buyer y de otros compradores
-- **Email:** `seller+cler_ktest@iaw.com`
+- **Email:** `seller+clerk_test@iaw.com`
 - **Contraseña:** `iawuser#`
 
 # Tiene acceso al panel de reportes
-- **Email:** `moderator+cler_ktest@iaw.com`
+- **Email:** `moderator+clerk_test@iaw.com`
 - **Contraseña:** `iawuser#`
 
 ## Breve descripción del proyecto
