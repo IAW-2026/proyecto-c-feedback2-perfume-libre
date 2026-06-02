@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Star, X } from "lucide-react";
+import { X } from "lucide-react";
+import StarRating from "./StarRating";
 
 interface OrderItem {
   id_producto: string;
@@ -162,55 +163,7 @@ export default function ReviewModal({ product, existingReviews, onClose }: Revie
   const [hoveredProductRating, setHoveredProductRating] = useState(0);
   const [hoveredSellerRating, setHoveredSellerRating] = useState(0);
 
-  const renderStars = (
-    rating: number, 
-    setRating: (val: number) => void,
-    hoverRating: number,
-    setHoverRating: (val: number) => void
-  ) => (
-    <div className="flex gap-1" onMouseLeave={() => setHoverRating(0)}>
-      {[1, 2, 3, 4, 5].map((star) => {
-        let colorClass = "text-gray-300";
-        let fill = "none";
 
-        if (hoverRating > 0) {
-          if (star <= hoverRating) {
-            if (star <= rating) {
-              colorClass = "text-teal-700";
-              fill = "currentColor";
-            } else {
-              colorClass = "text-teal-700/50";
-              fill = "currentColor";
-            }
-          } else {
-            colorClass = "text-gray-300";
-            fill = "none";
-          }
-        } else {
-          if (star <= rating) {
-            colorClass = "text-teal-700";
-            fill = "currentColor";
-          } else {
-            colorClass = "text-gray-300";
-            fill = "none";
-          }
-        }
-
-        return (
-          <button
-            key={star}
-            type="button"
-            disabled={submitState !== "idle"}
-            onClick={() => submitState === "idle" && setRating(star)}
-            onMouseEnter={() => submitState === "idle" && setHoverRating(star)}
-            className={`focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${colorClass}`}
-          >
-            <Star size={32} fill={fill} strokeWidth={2} />
-          </button>
-        );
-      })}
-    </div>
-  );
 
   return (
     <div 
@@ -248,7 +201,16 @@ export default function ReviewModal({ product, existingReviews, onClose }: Revie
             
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
               <label className="block text-gray-700 font-semibold mb-2">Califica el Producto</label>
-              {renderStars(productRating, setProductRating, hoveredProductRating, setHoveredProductRating)}
+              <div className={submitState !== "idle" ? "opacity-50 pointer-events-none" : ""}>
+                <StarRating 
+                  rating={productRating} 
+                  size={32} 
+                  readOnly={false} 
+                  onRatingChange={setProductRating} 
+                  hoverRating={hoveredProductRating} 
+                  onHoverChange={setHoveredProductRating} 
+                />
+              </div>
               <textarea 
                 className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-teal-700 focus:ring-1 focus:ring-teal-700 resize-none h-20 text-gray-900 mt-4 text-sm disabled:opacity-50 disabled:bg-gray-200 disabled:cursor-not-allowed bg-white"
                 placeholder="Escribe tu experiencia con el producto..."
@@ -260,7 +222,16 @@ export default function ReviewModal({ product, existingReviews, onClose }: Revie
 
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
               <label className="block text-gray-700 font-semibold mb-2">Califica al Vendedor</label>
-              {renderStars(sellerRating, setSellerRating, hoveredSellerRating, setHoveredSellerRating)}
+              <div className={submitState !== "idle" ? "opacity-50 pointer-events-none" : ""}>
+                <StarRating 
+                  rating={sellerRating} 
+                  size={32} 
+                  readOnly={false} 
+                  onRatingChange={setSellerRating} 
+                  hoverRating={hoveredSellerRating} 
+                  onHoverChange={setHoveredSellerRating} 
+                />
+              </div>
               <textarea 
                 className="w-full border border-gray-300 p-3 rounded-lg focus:outline-none focus:border-teal-700 focus:ring-1 focus:ring-teal-700 resize-none h-20 text-gray-900 mt-4 text-sm disabled:opacity-50 disabled:bg-gray-200 disabled:cursor-not-allowed bg-white"
                 placeholder="Escribe tu experiencia con el vendedor..."

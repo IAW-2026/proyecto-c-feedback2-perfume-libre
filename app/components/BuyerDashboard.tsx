@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Star, ChevronDown, Check } from "lucide-react";
 import ReviewModal from "./ReviewModal";
+import StarRating from "./StarRating";
 
 interface OrderItem {
   id_producto: string;
@@ -174,10 +175,8 @@ export default function BuyerDashboard() {
                   />
                   <div>
                     <h4 className="font-semibold text-gray-800">{item.nombre_producto}</h4>
-                    <div className="flex text-teal-700 mt-1">
-                      {[1,2,3,4,5].map(star => (
-                         <Star key={star} size={14} fill={star <= calificacion ? "currentColor" : "none"} />
-                      ))}
+                    <div className="mt-1">
+                      <StarRating rating={calificacion} />
                     </div>
                   </div>
                 </div>

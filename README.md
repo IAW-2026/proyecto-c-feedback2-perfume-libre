@@ -21,6 +21,8 @@ Para evaluar la aplicación, se pueden utilizar las siguientes credenciales de p
 - **Email:** `moderator+clerk_test@iaw.com`
 - **Contraseña:** `iawuser#`
 
+En caso de que se pida cualquier código 2FA este será 424242
+
 ## Breve descripción del proyecto
 Esta aplicación corresponde al **Módulo de Reseñas y Calificaciones** para el marketplace "Perfume Libre". Su propósito central es gestionar la reputación dentro del ecosistema, permitiendo a los compradores calificar de manera independiente tanto la calidad de los productos adquiridos como el servicio ofrecido por los vendedores.
 
