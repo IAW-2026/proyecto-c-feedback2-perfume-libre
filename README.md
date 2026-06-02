@@ -9,11 +9,16 @@ Aplicación **Feedback** del [Proyecto IAW 2026](https://iaw-2026.github.io/proy
 ## Usuarios disponibles para realizar pruebas
 Para evaluar la aplicación, se pueden utilizar las siguientes credenciales de prueba preconfiguradas en Clerk:
 
-- **Email:** `buyer+clerktest@iaw.com`
+# Contiene productos de seller a reseñar
+- **Email:** `buyer+clerk_test@iaw.com`
 - **Contraseña:** `iawuser#`
-- **Email:** `seller+clerktest@iaw.com`
+
+# Contiene reseñas de buyer y de otros compradores
+- **Email:** `seller+cler_ktest@iaw.com`
 - **Contraseña:** `iawuser#`
-- **Email:** `moderator+clerktest@iaw.com`
+
+# Tiene acceso al panel de reportes
+- **Email:** `moderator+cler_ktest@iaw.com`
 - **Contraseña:** `iawuser#`
 
 ## Breve descripción del proyecto
@@ -23,10 +28,15 @@ La plataforma está construida utilizando **Next.js (App Router)** y utiliza **P
 
 Adicionalmente, el sistema contempla integraciones inter-aplicaciones, consumiendo mediante APIs REST el estado de las órdenes desde la *Buyer App* y exponiendo sus propios endpoints de lectura para que otras aplicaciones (como el Catálogo) puedan mostrar los promedios de estrellas y la distribución de calificaciones en tiempo real.
 
+## Tecnologías extra usadas
+- Supabase para el proveedor de BBDD
+- Lucide para los iconos
+- Vercel Blob como bucket para las imagenes
+
 ## Variables de entorno
 Dentro de .env.example se pueden encontrar las distintas variables de entorno necesarias para el funcionamiento de la app:
 
-# Url de la BBDD que usará (en este caso yo estoy usando Supabase)
+# Url de la BBDD que usará
 - DATABASE_URL="postgresql://usuario:password@localhost:5432/feedback_db"
 
 # Tokens de Clerk

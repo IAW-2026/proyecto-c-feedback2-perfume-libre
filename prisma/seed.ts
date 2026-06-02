@@ -15,7 +15,7 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('Iniciando el seed de la base de datos...');
 
-  // Identificadores de Clerk para los usuarios de prueba (Se pueden inyectar vía .env local)
+  // Identificadores de Clerk para los usuarios de prueba
   const CLERK_BUYER_ID = process.env.CLERK_BUYER_ID || 'user_seed_buyer';
   const CLERK_SELLER_ID = process.env.CLERK_SELLER_ID || 'user_seed_seller';
   const CLERK_MODERATOR_ID = process.env.CLERK_MODERATOR_ID || 'user_admin';
@@ -80,81 +80,182 @@ async function main() {
     "Pésimo producto, no lo recomiendo."
   ];
 
-  // Generar reseñas de productos
-  let ordenCount = 1000;
-  for (const prod of productos) {
-    // 3 a 5 reseñas por producto
-    const numResenas = Math.floor(Math.random() * 3) + 3;
-    let sumaCalif = 0;
+  const { MOCKED_ORDERS_DB } = require("../lib/services/orders");
 
-    for (let i = 0; i < numResenas; i++) {
-      const calif = Math.random() > 0.3 ? (Math.floor(Math.random() * 2) + 4) : (Math.floor(Math.random() * 3) + 1);
-      sumaCalif += calif;
-      
-      let comentario = "";
-      if (calif >= 4) comentario = comentariosPositivos[Math.floor(Math.random() * comentariosPositivos.length)];
-      else if (calif === 3) comentario = comentariosNeutros[Math.floor(Math.random() * comentariosNeutros.length)];
-      else comentario = comentariosNegativos[Math.floor(Math.random() * comentariosNegativos.length)];
-
-      await prisma.resena.create({
-        data: {
-          idOrden: `mock_order_${ordenCount++}`,
-          idComprador: users[Math.floor(Math.random() * 6)].clerkUserId,
-          tipoResena: TipoResena.PRODUCTO,
-          idProducto: prod.id,
-          calificacion: calif,
-          comentario: comentario,
-          estado: EstadoResena.PUBLICA,
-        }
-      });
+  // Generar reseñas emparejadas basadas en las órdenes mockeadas
+  for (const orden of MOCKED_ORDERS_DB) {
+    if (orden.id_orden === 'orden_1001' || orden.id_orden === 'orden_1002' || orden.id_orden.startsWith('orden_9')) {
+      continue;
     }
+    const califProd = Math.floor(Math.random() * 3) + 3; // 3 a 5
+    const califVend = Math.floor(Math.random() * 3) + 3; // 3 a 5
+    
+    // Crear reseña producto
+    await prisma.resena.create({
+      data: {
+        idOrden: orden.id_orden,
+        idComprador: orden.id_comprador,
+        tipoResena: TipoResena.PRODUCTO,
+        idProducto: orden.items[0].id_producto,
+        calificacion: califProd,
+        comentario: califProd >= 4 ? "Excelente producto, aroma duradero." : "El aroma es rico pero no dura mucho.",
+        estado: EstadoResena.PUBLICA,
+      }
+    });
 
+    // Actualizar métricas producto (acumulamos en DB simplificado)
+    const metricasProd = await prisma.resena.aggregate({
+      where: { idProducto: orden.items[0].id_producto, tipoResena: TipoResena.PRODUCTO },
+      _avg: { calificacion: true },
+      _count: { _all: true }
+    });
+    
     await prisma.metricasProducto.upsert({
-      where: { idProducto: prod.id },
-      update: { promedioCalificacion: sumaCalif / numResenas, cantidadResenas: numResenas },
-      create: { idProducto: prod.id, promedioCalificacion: sumaCalif / numResenas, cantidadResenas: numResenas }
+      where: { idProducto: orden.items[0].id_producto },
+      update: { 
+        promedioCalificacion: metricasProd._avg.calificacion || califProd, 
+        cantidadResenas: metricasProd._count._all || 1
+      },
+      create: { 
+        idProducto: orden.items[0].id_producto, 
+        promedioCalificacion: califProd, 
+        cantidadResenas: 1 
+      }
     });
-  }
 
-  // Generar reseñas de vendedores
-  for (const vend of vendedores) {
-    const numResenas = Math.floor(Math.random() * 3) + 2;
-    let sumaCalif = 0;
+    // Crear reseña vendedor
+    await prisma.resena.create({
+      data: {
+        idOrden: orden.id_orden,
+        idComprador: orden.id_comprador,
+        tipoResena: TipoResena.VENDEDOR,
+        idVendedor: orden.id_vendedor,
+        calificacion: califVend,
+        comentario: califVend >= 4 ? "Vendedor rápido y confiable." : "Tardó un poco el envío.",
+        estado: EstadoResena.PUBLICA,
+      }
+    });
 
-    for (let i = 0; i < numResenas; i++) {
-      const calif = Math.floor(Math.random() * 3) + 3; // 3 a 5
-      sumaCalif += calif;
-      
-      await prisma.resena.create({
-        data: {
-          idOrden: `mock_order_${ordenCount++}`,
-          idComprador: users[Math.floor(Math.random() * 6)].clerkUserId,
-          tipoResena: TipoResena.VENDEDOR,
-          idVendedor: vend.id,
-          calificacion: calif,
-          comentario: calif >= 4 ? "Excelente atención y envío rápido." : "Tardó un poco en responder pero llegó bien.",
-          estado: EstadoResena.PUBLICA,
-        }
-      });
-    }
-
+    // Actualizar métricas vendedor
+    const metricasVend = await prisma.resena.aggregate({
+      where: { idVendedor: orden.id_vendedor, tipoResena: TipoResena.VENDEDOR },
+      _avg: { calificacion: true },
+      _count: { _all: true }
+    });
+    
     await prisma.metricasVendedor.upsert({
-      where: { idVendedor: vend.id },
-      update: { promedioCalificacion: sumaCalif / numResenas, cantidadResenas: numResenas },
-      create: { idVendedor: vend.id, promedioCalificacion: sumaCalif / numResenas, cantidadResenas: numResenas }
+      where: { idVendedor: orden.id_vendedor },
+      update: { 
+        promedioCalificacion: metricasVend._avg.calificacion || califVend, 
+        cantidadResenas: metricasVend._count._all || 1
+      },
+      create: { 
+        idVendedor: orden.id_vendedor, 
+        promedioCalificacion: califVend, 
+        cantidadResenas: 1 
+      }
     });
   }
 
-  // Reseña problemática y reporte
-  const resenaMala = await prisma.resena.create({
-    data: {
-      idOrden: `mock_order_${ordenCount++}`,
-      idComprador: users[0].clerkUserId,
-      tipoResena: TipoResena.PRODUCTO,
-      idProducto: "prod_chanel_5",
+  // 3. Crear reseñas ficticias realistas usando los IDs de clerk
+  console.log("Creando reseñas de prueba...");
+  
+  // Reseña positiva (Producto)
+  await prisma.resena.upsert({
+    where: {
+      idOrden_idComprador_tipoResena: {
+        idOrden: 'orden_1001',
+        idComprador: CLERK_BUYER_ID,
+        tipoResena: 'PRODUCTO'
+      }
+    },
+    update: {},
+    create: {
+      idResena: 'resena_seed_1',
+      idOrden: 'orden_1001',
+      idComprador: CLERK_BUYER_ID,
+      tipoResena: 'PRODUCTO',
+      idProducto: 'prod_chanel_5',
+      calificacion: 5,
+      comentario: 'Excelente perfume, me encantó. Llegó en perfectas condiciones.',
+      estado: 'PUBLICA',
+      imagenes: {
+        create: [
+          { url: 'https://placehold.co/300x300/e0f2fe/0369a1?text=Caja+Chanel' },
+          { url: 'https://placehold.co/300x300/fce7f3/be185d?text=Frasco+Abierto' }
+        ]
+      }
+    }
+  });
+
+  // Reseña positiva (Vendedor - par de la orden_seed_1)
+  await prisma.resena.upsert({
+    where: {
+      idOrden_idComprador_tipoResena: {
+        idOrden: 'orden_1001',
+        idComprador: CLERK_BUYER_ID,
+        tipoResena: 'VENDEDOR'
+      }
+    },
+    update: {},
+    create: {
+      idResena: 'resena_seed_v1',
+      idOrden: 'orden_1001',
+      idComprador: CLERK_BUYER_ID,
+      tipoResena: 'VENDEDOR',
+      idVendedor: CLERK_SELLER_ID,
+      calificacion: 5,
+      comentario: 'El vendedor despachó rapidísimo.',
+      estado: 'PUBLICA'
+    }
+  });
+
+  // Reseña negativa para que el administrador la vea
+  const resenaMala = await prisma.resena.upsert({
+    where: {
+      idOrden_idComprador_tipoResena: {
+        idOrden: 'orden_1002',
+        idComprador: CLERK_BUYER_ID,
+        tipoResena: 'PRODUCTO'
+      }
+    },
+    update: {},
+    create: {
+      idResena: 'resena_seed_2',
+      idOrden: 'orden_1002',
+      idComprador: CLERK_BUYER_ID,
+      tipoResena: 'PRODUCTO',
+      idProducto: 'prod_dior_sauvage',
+      calificacion: 2,
+      comentario: 'El perfume parece falso, el olor no dura nada y la caja venía abollada. Un desastre total!!!! Estafador!!!',
+      estado: 'PUBLICA',
+      imagenes: {
+        create: [
+          { url: 'https://placehold.co/300x300/fef2f2/b91c1c?text=Caja+Abollada' }
+        ]
+      }
+    }
+  });
+
+  // Reseña negativa (Vendedor - par de la orden_seed_2)
+  await prisma.resena.upsert({
+    where: {
+      idOrden_idComprador_tipoResena: {
+        idOrden: 'orden_1002',
+        idComprador: CLERK_BUYER_ID,
+        tipoResena: 'VENDEDOR'
+      }
+    },
+    update: {},
+    create: {
+      idResena: 'resena_seed_v2',
+      idOrden: 'orden_1002',
+      idComprador: CLERK_BUYER_ID,
+      tipoResena: 'VENDEDOR',
+      idVendedor: 'seller_aromas_vip',
       calificacion: 1,
-      comentario: "El vendedor es un estafador y este perfume es agua pintada. IDIOTA.",
-      estado: EstadoResena.PUBLICA,
+      comentario: 'Estafador, me mandó algo falso.',
+      estado: 'PUBLICA'
     }
   });
 

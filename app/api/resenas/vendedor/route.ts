@@ -114,3 +114,77 @@ async function actualizarMetricasVendedor(idVendedor: string) {
     },
   });
 }
+
+export async function PUT(req: Request) {
+  try {
+    const { userId: id_usuario } = await auth();
+    if (!id_usuario) return NextResponse.json({ estado: "error", mensaje: "No autorizado" }, { status: 401 });
+
+    const body = await req.json();
+    const { id_resena, puntuacion, comentario } = body;
+
+    if (!id_resena || !puntuacion) {
+      return NextResponse.json({ estado: "error", mensaje: "Faltan campos obligatorios" }, { status: 400 });
+    }
+
+    if (puntuacion < 1 || puntuacion > 5) {
+      return NextResponse.json({ estado: "error", mensaje: "La puntuación debe estar entre 1 y 5" }, { status: 400 });
+    }
+
+    if (puntuacion < 3 && (!comentario || comentario.trim() === "")) {
+      return NextResponse.json({ estado: "error", mensaje: "Comentario obligatorio para calificaciones bajas" }, { status: 400 });
+    }
+
+    const resenaExistente = await db.resena.findUnique({ where: { idResena: id_resena } });
+    if (!resenaExistente || resenaExistente.idComprador !== id_usuario) {
+      return NextResponse.json({ estado: "error", mensaje: "No encontrada o sin permisos" }, { status: 404 });
+    }
+
+    await db.resena.update({
+      where: { idResena: id_resena },
+      data: {
+        calificacion: puntuacion,
+        comentario: comentario || null,
+      }
+    });
+
+    if (resenaExistente.idVendedor) {
+      await actualizarMetricasVendedor(resenaExistente.idVendedor);
+    }
+
+    return NextResponse.json({ estado: "success", mensaje: "Reseña actualizada con éxito" });
+  } catch (error) {
+    console.error("Error actualizando reseña de vendedor:", error);
+    return NextResponse.json({ estado: "error", mensaje: "Error interno del servidor" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { userId: id_usuario } = await auth();
+    if (!id_usuario) return NextResponse.json({ estado: "error", mensaje: "No autorizado" }, { status: 401 });
+
+    const { searchParams } = new URL(req.url);
+    const id_resena = searchParams.get("id_resena");
+
+    if (!id_resena) {
+      return NextResponse.json({ estado: "error", mensaje: "Falta id_resena" }, { status: 400 });
+    }
+
+    const resenaExistente = await db.resena.findUnique({ where: { idResena: id_resena } });
+    if (!resenaExistente || resenaExistente.idComprador !== id_usuario) {
+      return NextResponse.json({ estado: "error", mensaje: "No encontrada o sin permisos" }, { status: 404 });
+    }
+
+    await db.resena.delete({ where: { idResena: id_resena } });
+
+    if (resenaExistente.idVendedor) {
+      await actualizarMetricasVendedor(resenaExistente.idVendedor);
+    }
+
+    return NextResponse.json({ estado: "success", mensaje: "Reseña eliminada con éxito" });
+  } catch (error) {
+    console.error("Error eliminando reseña de vendedor:", error);
+    return NextResponse.json({ estado: "error", mensaje: "Error interno del servidor" }, { status: 500 });
+  }
+}

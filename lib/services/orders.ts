@@ -68,34 +68,54 @@ const MOCKED_ORDERS_DB: Order[] = [
     fecha_compra: "2026-05-25T15:45:00Z"
   },
   
-  // 5 Compras asignadas al SELLER (Demostrando que también puede actuar como comprador en el mismo dashboard)
+  // Órdenes nuevas para quedar PENDIENTES de reseña (No serán seedeables en seed.ts)
   {
-    id_orden: "orden_1011", id_comprador: CLERK_SELLER_ID, id_vendedor: "seller_esencias", nombre_vendedor: "Esencias Puras",
+    id_orden: "orden_9001", id_comprador: CLERK_BUYER_ID, id_vendedor: CLERK_SELLER_ID, nombre_vendedor: "Seller Evaluador",
+    items: [{ id_producto: "prod_calvin_klein_one", nombre_producto: "Calvin Klein CK One", imagen: "https://placehold.co/150x150?text=CK+One" }],
+    fecha_compra: "2026-05-26T10:00:00Z"
+  },
+  {
+    id_orden: "orden_9002", id_comprador: CLERK_BUYER_ID, id_vendedor: CLERK_SELLER_ID, nombre_vendedor: "Seller Evaluador",
+    items: [{ id_producto: "prod_terre_hermes", nombre_producto: "Terre d'Hermès", imagen: "https://placehold.co/150x150?text=Terre+d+Hermes" }],
+    fecha_compra: "2026-05-27T11:00:00Z"
+  },
+  {
+    id_orden: "orden_9003", id_comprador: CLERK_BUYER_ID, id_vendedor: "seller_aromas_vip", nombre_vendedor: "Aromas VIP",
+    items: [{ id_producto: "prod_narciso_rodriguez", nombre_producto: "Narciso Rodriguez For Her", imagen: "https://placehold.co/150x150?text=Narciso+Rodriguez" }],
+    fecha_compra: "2026-05-28T12:00:00Z"
+  },
+  
+  // 5 Compras asignadas a otro usuario para que Seller Evaluador no tenga compras
+  {
+    id_orden: "orden_1011", id_comprador: "user_seed_2", id_vendedor: "seller_esencias", nombre_vendedor: "Esencias Puras",
     items: [{ id_producto: "prod_bleu_chanel", nombre_producto: "Bleu de Chanel", imagen: "https://placehold.co/150x150?text=Bleu+de+Chanel" }],
     fecha_compra: "2026-05-26T09:20:00Z"
   },
   {
-    id_orden: "orden_1012", id_comprador: CLERK_SELLER_ID, id_vendedor: "seller_fragancias_mundo", nombre_vendedor: "Fragancias del Mundo",
+    id_orden: "orden_1012", id_comprador: "user_seed_2", id_vendedor: "seller_fragancias_mundo", nombre_vendedor: "Fragancias del Mundo",
     items: [{ id_producto: "prod_acqua_gio", nombre_producto: "Acqua di Gio", imagen: "https://placehold.co/150x150?text=Acqua+di+Gio" }],
     fecha_compra: "2026-05-27T17:15:00Z"
   },
   {
-    id_orden: "orden_1013", id_comprador: CLERK_SELLER_ID, id_vendedor: CLERK_SELLER_ID, nombre_vendedor: "Seller Evaluador",
+    id_orden: "orden_1013", id_comprador: "user_seed_2", id_vendedor: "seller_aromas_vip", nombre_vendedor: "Aromas VIP",
     items: [{ id_producto: "prod_le_male", nombre_producto: "Jean Paul Gaultier Le Male", imagen: "https://placehold.co/150x150?text=Le+Male" }],
     fecha_compra: "2026-05-28T10:00:00Z"
   },
   {
-    id_orden: "orden_1014", id_comprador: CLERK_SELLER_ID, id_vendedor: "seller_aromas_vip", nombre_vendedor: "Aromas VIP",
+    id_orden: "orden_1014", id_comprador: "user_seed_2", id_vendedor: "seller_aromas_vip", nombre_vendedor: "Aromas VIP",
     items: [{ id_producto: "prod_one_million", nombre_producto: "1 Million Paco Rabanne", imagen: "https://placehold.co/150x150?text=1+Million" }],
     fecha_compra: "2026-05-29T14:30:00Z"
   },
   {
-    id_orden: "orden_1015", id_comprador: CLERK_SELLER_ID, id_vendedor: "seller_esencias", nombre_vendedor: "Esencias Puras",
+    id_orden: "orden_1015", id_comprador: "user_seed_2", id_vendedor: "seller_esencias", nombre_vendedor: "Esencias Puras",
     items: [{ id_producto: "prod_light_blue", nombre_producto: "Dolce & Gabbana Light Blue", imagen: "https://placehold.co/150x150?text=Light+Blue" }],
     fecha_compra: "2026-05-30T11:45:00Z"
   }
 ];
 
+
+// Exportamos las constantes para usarlas en otros mocks si es necesario
+export { CLERK_BUYER_ID, CLERK_SELLER_ID, MOCKED_ORDERS_DB };
 
 // Verifica que el usuario si compró esto para ver si puede darle una reseña o no
 export async function verificarCompra(
