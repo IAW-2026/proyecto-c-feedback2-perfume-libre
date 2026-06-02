@@ -1,50 +1,53 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { MotivoReporte } from "@prisma/client";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { id_resena, motivo, id_denunciante } = body;
+    const { userId } = await auth();
 
-    if (!id_resena || !motivo || !id_denunciante) {
+    if (!userId) {
       return NextResponse.json(
-        { estado: "error", mensaje: "Faltan campos obligatorios" },
+        { estado: "error", mensaje: "Usuario no autenticado" },
+        { status: 401 }
+      );
+    }
+
+    const { idResena, motivo, archivos } = await req.json();
+
+    if (!idResena || !motivo) {
+      return NextResponse.json(
+        { estado: "error", mensaje: "Faltan datos obligatorios" },
         { status: 400 }
       );
     }
 
     if (!Object.values(MotivoReporte).includes(motivo)) {
       return NextResponse.json(
-        { estado: "error", mensaje: "Motivo de reporte inválido" },
+        { estado: "error", mensaje: "Motivo inválido" },
         { status: 400 }
       );
     }
 
-    // Verificar que la reseña exista
-    const resena = await db.resena.findUnique({
-      where: { idResena: id_resena }
-    });
-
-    if (!resena) {
-      return NextResponse.json(
-        { estado: "error", mensaje: "La reseña no existe" },
-        { status: 404 }
-      );
-    }
-
-    const nuevoReporte = await db.reporteResena.create({
+    // Crear el reporte
+    const reporte = await db.reporteResena.create({
       data: {
-        idResena: id_resena,
-        motivo: motivo as MotivoReporte,
-        idDenunciante: id_denunciante,
-      },
+        idResena,
+        motivo,
+        idDenunciante: userId,
+        archivos: archivos && archivos.length > 0 ? {
+          create: archivos.map((url: string) => ({ url }))
+        } : undefined
+      }
     });
 
-    return NextResponse.json(
-      { estado: "success", mensaje: "Reporte enviado con éxito", id_reporte: nuevoReporte.idReporte },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      estado: "success",
+      mensaje: "Reporte enviado con éxito",
+      reporte
+    });
+
   } catch (error) {
     console.error("Error creando reporte:", error);
     return NextResponse.json(
