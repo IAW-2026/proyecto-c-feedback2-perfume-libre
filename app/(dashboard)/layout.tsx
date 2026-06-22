@@ -37,7 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex flex-1 relative overflow-hidden">
         {/* Sidebar */}
         <div
-          className={`absolute left-0 top-0 z-50 h-full w-64 bg-white shadow-xl transition-transform duration-300 ease-in-out ${
+          className={`absolute inset-y-0 left-0 z-50 w-64 shrink-0 bg-white shadow-xl transition-transform duration-300 ease-in-out ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           } md:relative md:translate-x-0`}
         >

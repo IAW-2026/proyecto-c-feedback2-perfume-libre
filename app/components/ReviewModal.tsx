@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import StarRating from "./StarRating";
 
@@ -35,6 +35,11 @@ interface ReviewModalProps {
 }
 
 export default function ReviewModal({ product, existingReviews, onClose }: ReviewModalProps) {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = "unset"; };
+  }, []);
+
   const isEditing = !!(existingReviews?.producto || existingReviews?.vendedor);
 
   const [productRating, setProductRating] = useState(existingReviews?.producto?.calificacion || 0);

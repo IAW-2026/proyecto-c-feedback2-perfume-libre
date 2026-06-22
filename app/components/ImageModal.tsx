@@ -1,11 +1,20 @@
 "use client";
 
+import { useEffect } from "react";
+
 interface ImageModalProps {
   imageUrl: string | null;
   onClose: () => void;
 }
 
 export default function ImageModal({ imageUrl, onClose }: ImageModalProps) {
+  useEffect(() => {
+    if (imageUrl) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = "unset"; };
+    }
+  }, [imageUrl]);
+
   if (!imageUrl) return null;
 
   return (

@@ -35,9 +35,12 @@ export default function ReportModal({ bundle, onClose }: ReportModalProps) {
 
   useEffect(() => {
     if (bundle) {
+      document.body.style.overflow = "hidden";
       if (bundle.resenaProducto && !bundle.resenaVendedor) setReportType("PRODUCTO");
       else if (!bundle.resenaProducto && bundle.resenaVendedor) setReportType("VENDEDOR");
       else setReportType(null);
+      
+      return () => { document.body.style.overflow = "unset"; };
     }
   }, [bundle]);
 
