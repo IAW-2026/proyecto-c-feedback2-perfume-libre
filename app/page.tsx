@@ -1,7 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { SignIn } from "@clerk/nextjs";
-import Dashboard from "./components/Dashboard";
-import AdminDashboard from "./components/AdminDashboard";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
   const { userId } = await auth();
@@ -22,8 +21,8 @@ export default async function Home() {
   const role = user?.publicMetadata?.role as string | undefined;
 
   if (role === "admin") {
-    return <AdminDashboard />;
+    redirect("/soporte");
   }
 
-  return <Dashboard />;
+  redirect("/dar-resenas");
 }

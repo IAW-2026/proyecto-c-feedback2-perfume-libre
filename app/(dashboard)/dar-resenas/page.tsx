@@ -1,35 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Star, ChevronDown, Check } from "lucide-react";
-import ReviewModal from "./ReviewModal";
-import StarRating from "./StarRating";
+import ReviewModal from "@/app/components/ReviewModal";
+import ProductReviewCard from "./components/ProductReviewCard";
+import { Order, OrderItem, Resena } from "./types";
 
-interface OrderItem {
-  id_producto: string;
-  nombre_producto: string;
-  imagen: string;
-}
-
-interface Order {
-  id_orden: string;
-  id_vendedor: string;
-  nombre_vendedor: string;
-  fecha_compra: string;
-  items: OrderItem[];
-}
-
-interface Resena {
-  idResena: string;
-  idProducto?: string;
-  idOrden: string;
-  calificacion: number;
-  comentario: string | null;
-  tipoResena: "PRODUCTO" | "VENDEDOR";
-  imagenes?: { idImagen: string, url: string }[];
-}
-
-export default function BuyerDashboard() {
+export default function DarResenasPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [myReviews, setMyReviews] = useState<Resena[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,11 +48,10 @@ export default function BuyerDashboard() {
   const handleReviewAdded = () => {
     setSelectedProduct(null);
     setExistingReviews(undefined);
-    fetchOrdersAndReviews(); // Refetch to move the item to the reviewed list
+    fetchOrdersAndReviews();
   };
 
   const openReviewModal = (orden: Order, item: OrderItem) => {
-    // Buscar si ya tiene reseñas
     const prodReview = myReviews.find(r => r.idProducto === item.id_producto && r.tipoResena === "PRODUCTO");
     const sellerReview = myReviews.find(r => r.idOrden === orden.id_orden && r.tipoResena === "VENDEDOR");
 
@@ -96,8 +71,6 @@ export default function BuyerDashboard() {
     return <div className="text-teal-700 text-center py-10">Cargando compras...</div>;
   }
 
-  // Dividimos en 2 listas. Un producto está "reseñado" si existe una reseña de tipo PRODUCTO hecha por el usuario
-  // para el id_producto correspondiente.
   const reviewedProductIds = new Set(
     myReviews.filter(r => r.tipoResena === "PRODUCTO").map(r => r.idProducto)
   );
@@ -125,26 +98,12 @@ export default function BuyerDashboard() {
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Productos sin reseñar</h3>
           <div className="grid gap-4">
             {sinResenar.map(({ orden, item }) => (
-              <div 
+              <ProductReviewCard
                 key={`${orden.id_orden}-${item.id_producto}`}
-                className="bg-white border border-gray-200 rounded p-4 flex items-center justify-between shadow-sm hover:shadow transition-shadow cursor-pointer"
+                item={item}
+                sellerName={orden.nombre_vendedor}
                 onClick={() => openReviewModal(orden, item)}
-              >
-                <div className="flex items-center gap-4">
-                  <img 
-                    src={item.imagen} 
-                    alt={item.nombre_producto} 
-                    className="w-16 h-16 object-cover bg-gray-100 rounded"
-                  />
-                  <div>
-                    <h4 className="font-semibold text-gray-800">{item.nombre_producto}</h4>
-                    <p className="text-sm text-gray-500">Vendido por: {orden.nombre_vendedor}</p>
-                  </div>
-                </div>
-                <div className="text-teal-700 font-medium text-sm">
-                  Calificar
-                </div>
-              </div>
+              />
             ))}
           </div>
         </section>
@@ -162,34 +121,19 @@ export default function BuyerDashboard() {
           <h3 className="text-lg font-semibold text-gray-700 mb-4 mt-8">Mis reseñas</h3>
           <div className="grid gap-4">
             {misResenasItems.map(({ orden, item, calificacion }) => (
-              <div 
+              <ProductReviewCard
                 key={`rev-${orden.id_orden}-${item.id_producto}`}
-                className="bg-white border border-gray-200 rounded p-4 flex items-center justify-between shadow-sm cursor-pointer hover:shadow transition-shadow"
+                item={item}
+                sellerName={orden.nombre_vendedor}
+                calificacion={calificacion}
+                isReviewed={true}
                 onClick={() => openReviewModal(orden, item)}
-              >
-                <div className="flex items-center gap-4">
-                  <img 
-                    src={item.imagen} 
-                    alt={item.nombre_producto} 
-                    className="w-16 h-16 object-cover bg-gray-100 rounded"
-                  />
-                  <div>
-                    <h4 className="font-semibold text-gray-800">{item.nombre_producto}</h4>
-                    <div className="mt-1">
-                      <StarRating rating={calificacion} />
-                    </div>
-                  </div>
-                </div>
-                <div className="text-gray-500 font-medium text-sm flex items-center gap-1">
-                  Editar
-                </div>
-              </div>
+              />
             ))}
           </div>
         </section>
       )}
 
-      {/* Modal de Calificación */}
       {selectedProduct && (
         <ReviewModal 
           product={selectedProduct} 
@@ -200,4 +144,3 @@ export default function BuyerDashboard() {
     </div>
   );
 }
-
