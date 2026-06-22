@@ -46,10 +46,13 @@ export async function GET(
       imagenes: item.imagenes.map(img => img.url),
     }));
 
+    const totalPages = Math.ceil(total / limit);
+
     return NextResponse.json({
       promedio_producto: metricas?.promedioCalificacion || 0,
       total,
       page,
+      totalPages,
       items: safeItems,
     });
   } catch (error) {

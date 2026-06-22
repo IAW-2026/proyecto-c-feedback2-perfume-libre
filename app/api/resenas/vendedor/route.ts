@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { TipoResena, EstadoResena } from "@prisma/client";
 import { verificarCompra } from "@/lib/services/orders";
 import { auth } from "@clerk/nextjs/server";
+import { crearResenaSchema, actualizarResenaSchema } from "@/lib/validations";
 
 export async function POST(req: Request) {
   try {
@@ -16,27 +17,19 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { id_vendedor, puntuacion, comentario, id_orden } = body;
-
-    if (!id_vendedor || !puntuacion || !id_orden) {
+    
+    const validacion = crearResenaSchema.safeParse(body);
+    if (!validacion.success) {
       return NextResponse.json(
-        { estado: "error", mensaje: "Faltan campos obligatorios (id_orden, id_vendedor, puntuacion)" },
+        { estado: "error", mensaje: validacion.error.issues[0].message, detalles: validacion.error.issues },
         { status: 400 }
       );
     }
 
-    if (puntuacion < 1 || puntuacion > 5) {
-      return NextResponse.json(
-        { estado: "error", mensaje: "La puntuación debe estar entre 1 y 5" },
-        { status: 400 }
-      );
-    }
+    const { id_vendedor, puntuacion, comentario, id_orden } = validacion.data;
 
-    if (puntuacion < 3 && (!comentario || comentario.trim() === "")) {
-      return NextResponse.json(
-        { estado: "error", mensaje: "El comentario es obligatorio para calificaciones menores a 3 estrellas" },
-        { status: 400 }
-      );
+    if (!id_vendedor) {
+      return NextResponse.json({ estado: "error", mensaje: "id_vendedor es requerido para esta ruta" }, { status: 400 });
     }
 
     const compraVerificada = await verificarCompra(id_orden, id_usuario, undefined, id_vendedor);
@@ -121,19 +114,16 @@ export async function PUT(req: Request) {
     if (!id_usuario) return NextResponse.json({ estado: "error", mensaje: "No autorizado" }, { status: 401 });
 
     const body = await req.json();
-    const { id_resena, puntuacion, comentario } = body;
-
-    if (!id_resena || !puntuacion) {
-      return NextResponse.json({ estado: "error", mensaje: "Faltan campos obligatorios" }, { status: 400 });
+    
+    const validacion = actualizarResenaSchema.safeParse(body);
+    if (!validacion.success) {
+      return NextResponse.json(
+        { estado: "error", mensaje: validacion.error.issues[0].message, detalles: validacion.error.issues },
+        { status: 400 }
+      );
     }
 
-    if (puntuacion < 1 || puntuacion > 5) {
-      return NextResponse.json({ estado: "error", mensaje: "La puntuación debe estar entre 1 y 5" }, { status: 400 });
-    }
-
-    if (puntuacion < 3 && (!comentario || comentario.trim() === "")) {
-      return NextResponse.json({ estado: "error", mensaje: "Comentario obligatorio para calificaciones bajas" }, { status: 400 });
-    }
+    const { id_resena, puntuacion, comentario } = validacion.data;
 
     const resenaExistente = await db.resena.findUnique({ where: { idResena: id_resena } });
     if (!resenaExistente || resenaExistente.idComprador !== id_usuario) {

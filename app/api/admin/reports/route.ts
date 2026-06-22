@@ -17,24 +17,40 @@ export async function GET(req: Request) {
       return NextResponse.json({ estado: "error", mensaje: "No autorizado" }, { status: 403 });
     }
 
-    const reportes = await db.reporteResena.findMany({
-      where: {
-        resena: {
-          estado: EstadoResena.PUBLICA // Solo traer reportes de reseñas que aún están públicas
-        }
-      },
-      include: {
-        resena: true,
-        archivos: true
-      },
-      orderBy: {
-        createdAt: 'asc'
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = 10;
+    const skip = (page - 1) * pageSize;
+
+    const whereClause = {
+      resena: {
+        estado: EstadoResena.PUBLICA // Solo traer reportes de reseñas que aún están públicas
       }
-    });
+    };
+
+    const [reportes, totalCount] = await Promise.all([
+      db.reporteResena.findMany({
+        where: whereClause,
+        include: {
+          resena: true,
+          archivos: true
+        },
+        orderBy: {
+          createdAt: 'asc'
+        },
+        skip,
+        take: pageSize
+      }),
+      db.reporteResena.count({ where: whereClause })
+    ]);
+
+    const totalPages = Math.ceil(totalCount / pageSize);
 
     return NextResponse.json({
       estado: "success",
-      reportes
+      reportes,
+      totalPages,
+      currentPage: page
     });
   } catch (error) {
     console.error("Error obteniendo reportes:", error);

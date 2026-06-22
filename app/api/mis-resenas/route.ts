@@ -13,22 +13,37 @@ export async function GET(req: Request) {
       );
     }
 
-    // Buscamos todas las reseñas creadas por este usuario (comprador)
-    const misResenas = await db.resena.findMany({
-      where: {
-        idComprador: userId,
-      },
-      include: {
-        imagenes: true
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = 10;
+    const skip = (page - 1) * pageSize;
+
+    const whereClause = {
+      idComprador: userId,
+    };
+
+    const [misResenas, totalCount] = await Promise.all([
+      db.resena.findMany({
+        where: whereClause,
+        include: {
+          imagenes: true
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: pageSize
+      }),
+      db.resena.count({ where: whereClause })
+    ]);
+
+    const totalPages = Math.ceil(totalCount / pageSize);
 
     return NextResponse.json({
       estado: "success",
-      resenas: misResenas
+      resenas: misResenas,
+      totalPages,
+      currentPage: page
     });
 
   } catch (error) {

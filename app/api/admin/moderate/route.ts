@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { DecisionModeracion, EstadoResena } from "@prisma/client";
+import { moderarReporteSchema } from "@/lib/validations";
 
 export async function POST(req: Request) {
   try {
@@ -17,15 +18,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ estado: "error", mensaje: "No autorizado" }, { status: 403 });
     }
 
-    const { idReporte, decision, motivoAdmin } = await req.json();
+    const body = await req.json();
 
-    if (!idReporte || !decision) {
-      return NextResponse.json({ estado: "error", mensaje: "Faltan datos obligatorios" }, { status: 400 });
+    const validacion = moderarReporteSchema.safeParse(body);
+    if (!validacion.success) {
+      return NextResponse.json(
+        { estado: "error", mensaje: validacion.error.issues[0].message, detalles: validacion.error.issues },
+        { status: 400 }
+      );
     }
 
-    if (!Object.values(DecisionModeracion).includes(decision)) {
-      return NextResponse.json({ estado: "error", mensaje: "Decisión inválida" }, { status: 400 });
-    }
+    const { idReporte, decision, motivoAdmin } = validacion.data;
 
     // Usar transacción para asegurar atomicidad
     await db.$transaction(async (tx) => {

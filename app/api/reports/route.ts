@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { MotivoReporte } from "@prisma/client";
+import { crearReporteSchema } from "@/lib/validations";
 
 export async function POST(req: Request) {
   try {
@@ -14,21 +15,17 @@ export async function POST(req: Request) {
       );
     }
 
-    const { idResena, motivo, archivos } = await req.json();
-
-    if (!idResena || !motivo) {
+    const body = await req.json();
+    
+    const validacion = crearReporteSchema.safeParse(body);
+    if (!validacion.success) {
       return NextResponse.json(
-        { estado: "error", mensaje: "Faltan datos obligatorios" },
+        { estado: "error", mensaje: validacion.error.issues[0].message, detalles: validacion.error.issues },
         { status: 400 }
       );
     }
 
-    if (!Object.values(MotivoReporte).includes(motivo)) {
-      return NextResponse.json(
-        { estado: "error", mensaje: "Motivo inválido" },
-        { status: 400 }
-      );
-    }
+    const { idResena, motivo, archivos } = validacion.data;
 
     // Crear el reporte
     const reporte = await db.reporteResena.create({

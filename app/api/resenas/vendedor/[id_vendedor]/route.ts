@@ -41,10 +41,13 @@ export async function GET(
       fecha: item.createdAt,
     }));
 
+    const totalPages = Math.ceil(total / limit);
+
     return NextResponse.json({
       promedio_vendedor: metricas?.promedioCalificacion || 0,
       total,
       page,
+      totalPages,
       items: safeItems,
     });
   } catch (error) {
