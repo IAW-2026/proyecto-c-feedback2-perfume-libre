@@ -1,10 +1,20 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
-  "/api(.*)"
-]); // Agrega aquí las rutas públicas que no requieren autenticación
+  "/api(.*)",
+  "/"
+]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Check API key for /api routes
+  if (req.nextUrl.pathname.startsWith('/api')) {
+    const apiKey = req.headers.get('x-api-key');
+    if (!apiKey || apiKey !== process.env.API_KEY) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
   if (!isPublicRoute(req)) {
     await auth.protect();
   }
