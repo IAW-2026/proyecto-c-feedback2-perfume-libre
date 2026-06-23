@@ -7,10 +7,13 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // Check API key for /api routes
+  // Verificamos protección en las rutas de API
   if (req.nextUrl.pathname.startsWith('/api')) {
+    const { userId } = await auth();
     const apiKey = req.headers.get('x-api-key');
-    if (!apiKey || apiKey !== process.env.API_KEY) {
+    
+    // Permitir acceso si el usuario está autenticado en Clerk O si manda el API_KEY correcto
+    if (!userId && (!apiKey || apiKey !== process.env.API_KEY)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
