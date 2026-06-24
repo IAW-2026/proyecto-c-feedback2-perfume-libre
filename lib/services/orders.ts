@@ -174,7 +174,7 @@ export async function obtenerOrdenesDelComprador(id_comprador: string): Promise<
   // --- IMPLEMENTACIÓN REAL ---
   try {
     const BUYER_APP_URL = process.env.BUYER_APP_URL || "http://localhost:3001";
-    const response = await fetch(`${BUYER_APP_URL}/api/compras/me/entregadas?sin_resena=true`, {
+    const response = await fetch(`${BUYER_APP_URL}/api/compras/me/entregadas?id_comprador=${id_comprador}`, {
       headers: { "Content-Type": "application/json" }
     });
 

@@ -7,13 +7,21 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  const path = req.nextUrl.pathname;
+  
+  const isPublicApiEndpoint = 
+    req.method === 'GET' && (
+      path.match(/^\/api\/resenas\/producto\/[^\/]+(\/resumen)?$/) ||
+      path.match(/^\/api\/resenas\/vendedor\/[^\/]+(\/resumen)?$/)
+    );
+
   // Verificamos protección en las rutas de API
-  if (req.nextUrl.pathname.startsWith('/api')) {
+  if (path.startsWith('/api') && !isPublicApiEndpoint) {
     const { userId } = await auth();
-    const apiKey = req.headers.get('x-api-key');
+    const apiKey = req.headers.get('api_key');
     
     // Permitir acceso si el usuario está autenticado en Clerk O si manda el API_KEY correcto
-    if (!userId && (!apiKey || apiKey !== process.env.API_KEY)) {
+    if (!userId && (!apiKey || apiKey !== process.env.FEEDBACK_API_KEY)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }
