@@ -15,6 +15,10 @@ export default clerkMiddleware(async (auth, req) => {
       path.match(/^\/api\/resenas\/vendedor\/[^\/]+(\/resumen)?$/)
     );
 
+  if (!isPublicRoute(req)) {
+    await auth.protect();
+  }
+
   // Verificamos protección en las rutas de API
   if (path.startsWith('/api') && !isPublicApiEndpoint) {
     const { userId } = await auth();
@@ -26,9 +30,32 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
-  if (!isPublicRoute(req)) {
-    await auth.protect();
+  // Protección para el panel de soporte
+  if (path.startsWith('/soporte')) {
+    const { userId, sessionClaims } = await auth();
+    
+    if (userId) {
+      // Intentar leer de sessionClaims si está configurado el template
+      let role = (sessionClaims?.metadata as any)?.role || (sessionClaims?.public_metadata as any)?.role;
+      
+      // Si no viene en el token, llamamos a la API de Clerk
+      if (!role) {
+        try {
+          const { clerkClient } = await import("@clerk/nextjs/server");
+          const client = await clerkClient();
+          const user = await client.users.getUser(userId);
+          role = user.publicMetadata?.role;
+        } catch (e) {
+          console.error("Error al obtener el rol del usuario en middleware:", e);
+        }
+      }
+
+      if (role !== "admin") {
+        return NextResponse.redirect(new URL("/dar-resenas", req.url));
+      }
+    }
   }
+
 });
 
 
