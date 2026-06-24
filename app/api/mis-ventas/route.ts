@@ -15,6 +15,10 @@ export async function GET(req: Request) {
       );
     }
 
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = 5;
+
     // Buscamos todas las reseñas que están ligadas al ID de este vendedor
     // La BBDD separa reseña de PRODUCTO y de VENDEDOR. Si queremos "reseñas a mis productos",
     // necesitamos las reseñas de productos que este usuario VENDIÓ.
@@ -79,9 +83,16 @@ export async function GET(req: Request) {
       }
     });
 
+    const totalCount = combinadas.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    const skip = (page - 1) * pageSize;
+    const paginatedItems = combinadas.slice(skip, skip + pageSize);
+
     return NextResponse.json({
       estado: "success",
-      resenas: combinadas
+      resenas: paginatedItems,
+      totalPages,
+      currentPage: page
     });
 
   } catch (error) {

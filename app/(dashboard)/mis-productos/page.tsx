@@ -5,6 +5,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import ImageModal from "@/app/components/ImageModal";
 import ReportModal from "@/app/components/ReportModal";
 import ReviewTableRow from "./components/ReviewTableRow";
+import Pagination from "@/app/components/Pagination";
 import { ReviewBundle, SortKey, SortDirection } from "./types";
 
 export default function MisProductosPage() {
@@ -17,13 +18,18 @@ export default function MisProductosPage() {
   const [sortKey, setSortKey] = useState<SortKey>('nombre');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   useEffect(() => {
     async function fetchReviews() {
+      setLoading(true);
       try {
-        const res = await fetch("/api/mis-ventas");
+        const res = await fetch(`/api/mis-ventas?page=${page}`);
         const data = await res.json();
         if (data.estado === "success") {
           setBundles(data.resenas);
+          setTotalPages(data.totalPages);
         }
       } catch (err) {
         console.error(err);
@@ -32,7 +38,7 @@ export default function MisProductosPage() {
       }
     }
     fetchReviews();
-  }, []);
+  }, [page]);
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -79,7 +85,7 @@ export default function MisProductosPage() {
     });
   }, [bundles, sortKey, sortDirection]);
 
-  if (loading) {
+  if (loading && bundles.length === 0) {
     return <div className="text-teal-700 text-center py-10">Cargando reseñas de tus ventas...</div>;
   }
   
@@ -120,7 +126,7 @@ export default function MisProductosPage() {
               <th className="p-4"></th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className={loading ? 'opacity-50 pointer-events-none' : ''}>
             {sortedBundles.map(bundle => (
               <ReviewTableRow
                 key={bundle.idResenaBundle}
@@ -134,6 +140,13 @@ export default function MisProductosPage() {
           </tbody>
         </table>
       </div>
+
+      <Pagination 
+        currentPage={page} 
+        totalPages={totalPages} 
+        onPageChange={setPage}
+        disabled={loading}
+      />
       
       <ImageModal 
         imageUrl={selectedImage} 
@@ -146,3 +159,4 @@ export default function MisProductosPage() {
     </div>
   );
 }
+
