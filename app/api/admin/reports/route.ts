@@ -25,6 +25,9 @@ export async function GET(req: Request) {
     const whereClause = {
       resena: {
         estado: EstadoResena.PUBLICA // Solo traer reportes de reseñas que aún están públicas
+      },
+      moderaciones: {
+        none: {} // Solo traer reportes que NO han sido moderados aún
       }
     };
 

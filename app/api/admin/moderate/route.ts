@@ -32,7 +32,12 @@ export async function POST(req: Request) {
 
     // Usar transacción para asegurar atomicidad
     await db.$transaction(async (tx) => {
-      // Crear el registro de moderación
+      // Borrar moderaciones anteriores si existen para este reporte (para actualizar la resolución)
+      await tx.moderacionResena.deleteMany({
+        where: { idReporte }
+      });
+
+      // Crear el registro de moderación nuevo (actualizará el createdAt automáticamente)
       await tx.moderacionResena.create({
         data: {
           idReporte,
@@ -48,17 +53,15 @@ export async function POST(req: Request) {
       });
 
       if (reporte) {
-        // Actualizar el estado de la reseña
+        // Actualizar el estado de la reseña según la decisión actual
         let nuevoEstado: EstadoResena = EstadoResena.PUBLICA;
         if (decision === DecisionModeracion.OCULTAR) nuevoEstado = EstadoResena.OCULTA;
         if (decision === DecisionModeracion.ELIMINAR) nuevoEstado = EstadoResena.ELIMINADA;
 
-        if (nuevoEstado !== EstadoResena.PUBLICA) {
-          await tx.resena.update({
-            where: { idResena: reporte.idResena },
-            data: { estado: nuevoEstado }
-          });
-        }
+        await tx.resena.update({
+          where: { idResena: reporte.idResena },
+          data: { estado: nuevoEstado }
+        });
       }
     });
 
