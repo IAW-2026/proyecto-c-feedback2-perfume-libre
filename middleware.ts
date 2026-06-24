@@ -15,9 +15,6 @@ export default clerkMiddleware(async (auth, req) => {
       path.match(/^\/api\/resenas\/vendedor\/[^\/]+(\/resumen)?$/)
     );
 
-  if (!isPublicRoute(req)) {
-    await auth.protect();
-  }
 
   // Verificamos protección en las rutas de API
   if (path.startsWith('/api') && !isPublicApiEndpoint) {
@@ -30,6 +27,10 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
+  if (!isPublicRoute(req)) {
+    await auth.protect();
+  }
+  
   // Protección para el panel de soporte
   if (path.startsWith('/soporte')) {
     const { userId, sessionClaims } = await auth();
