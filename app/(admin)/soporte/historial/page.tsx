@@ -150,7 +150,11 @@ export default function HistorialReportesPage() {
             </div>
             <div>
               <h3 className="text-xl font-bold text-gray-800">Historial vacío</h3>
-              <p className="text-gray-500 mt-1">No hay reportes que coincidan con los filtros seleccionados.</p>
+              <p className="text-gray-500 mt-1">
+                {filters.RECHAZAR && filters.OCULTAR && filters.ELIMINAR
+                  ? "Aún no se ha moderado ningún reporte."
+                  : "No hay reportes que coincidan con los filtros seleccionados."}
+              </p>
             </div>
           </div>
         ) : (
