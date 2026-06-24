@@ -50,7 +50,8 @@ export async function GET(req: Request) {
       estado: "success",
       reportes,
       totalPages,
-      currentPage: page
+      currentPage: page,
+      totalCount
     });
   } catch (error) {
     console.error("Error obteniendo reportes:", error);

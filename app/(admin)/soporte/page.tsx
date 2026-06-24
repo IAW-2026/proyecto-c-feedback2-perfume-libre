@@ -11,6 +11,7 @@ export default function SoportePage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     fetchReports(currentPage);
@@ -24,6 +25,7 @@ export default function SoportePage() {
       if (data.estado === "success") {
         setReportes(data.reportes);
         setTotalPages(data.totalPages || 1);
+        setTotalCount(data.totalCount || 0);
       }
     } catch (err) {
       console.error(err);
@@ -75,12 +77,14 @@ export default function SoportePage() {
       <div className="flex justify-between items-end border-b-2 border-slate-800 pb-2 mb-6">
         <h2 className="text-2xl font-bold text-slate-800">Reportes Pendientes</h2>
         <span className="text-sm font-semibold text-slate-500 bg-slate-200 px-3 py-1 rounded-full">
-          {reportes.length} {reportes.length === 1 ? 'reporte' : 'reportes'}
+          {totalCount} {totalCount === 1 ? 'reporte' : 'reportes'}
         </span>
       </div>
 
-      <div className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
-        {reportes.length === 0 ? (
+      <div className={loading && reportes.length > 0 ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+        {loading && reportes.length === 0 ? (
+          <div className="text-slate-600 text-center py-10">Cargando reportes...</div>
+        ) : reportes.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-10 flex flex-col items-center justify-center gap-4 text-center">
             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
               <Check className="text-green-600" size={32} />
