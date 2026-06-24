@@ -42,14 +42,14 @@ async function main() {
 
   // Lista de Productos (Perfumes)
   const productos = [
-    { id: "prod_chanel_5", nombre: "Chanel No. 5" },
-    { id: "prod_dior_sauvage", nombre: "Dior Sauvage" },
-    { id: "prod_armani_code", nombre: "Armani Code" },
-    { id: "prod_paco_invictus", nombre: "Paco Rabanne Invictus" },
-    { id: "prod_carolina_good_girl", nombre: "Carolina Herrera Good Girl" },
-    { id: "prod_ysl_libre", nombre: "YSL Libre" },
-    { id: "prod_hugo_boss", nombre: "Hugo Boss Bottled" },
-    { id: "prod_versace_eros", nombre: "Versace Eros" },
+    { id: "1", nombre: "Chanel No. 5" },
+    { id: "2", nombre: "Dior Sauvage" },
+    { id: "12", nombre: "Armani Code" },
+    { id: "16", nombre: "Paco Rabanne Invictus" },
+    { id: "3", nombre: "Carolina Herrera Good Girl" },
+    { id: "11", nombre: "YSL Libre" },
+    { id: "6", nombre: "Hugo Boss Bottled" },
+    { id: "18", nombre: "Versace Eros" },
   ];
 
   // Lista de Vendedores
@@ -84,7 +84,7 @@ async function main() {
 
   // Generar reseñas emparejadas basadas en las órdenes mockeadas
   for (const orden of MOCKED_ORDERS_DB) {
-    if (orden.id_orden === 'orden_1001' || orden.id_orden === 'orden_1002' || orden.id_orden.startsWith('orden_9')) {
+    if (orden.id_orden === 'orden_1001' || orden.id_orden === 'orden_1002' || orden.id_orden.startsWith('orden_9') || orden.id_orden.startsWith('orden_masiva_') || orden.id_orden.startsWith('orden_pending_masiva_')) {
       continue;
     }
     const califProd = Math.floor(Math.random() * 3) + 3; // 3 a 5
@@ -175,7 +175,7 @@ async function main() {
       idOrden: 'orden_1001',
       idComprador: CLERK_BUYER_ID,
       tipoResena: 'PRODUCTO',
-      idProducto: 'prod_chanel_5',
+      idProducto: '1',
       calificacion: 5,
       comentario: 'Excelente perfume, me encantó. Llegó en perfectas condiciones.',
       estado: 'PUBLICA',
@@ -225,7 +225,7 @@ async function main() {
       idOrden: 'orden_1002',
       idComprador: CLERK_BUYER_ID,
       tipoResena: 'PRODUCTO',
-      idProducto: 'prod_dior_sauvage',
+      idProducto: '2',
       calificacion: 2,
       comentario: 'El perfume parece falso, el olor no dura nada y la caja venía abollada. Un desastre total!!!! Estafador!!!',
       estado: 'PUBLICA',
@@ -266,6 +266,124 @@ async function main() {
       idDenunciante: users[1].clerkUserId,
     }
   });
+
+  // 4. Crear reseñas masivas para probar paginación
+  console.log("Creando reseñas masivas para probar paginación...");
+  const targetSellerId = CLERK_SELLER_ID;
+
+  for (let i = 0; i < 40; i++) {
+    const isPositive = Math.random() > 0.5;
+    const califProd = isPositive ? (Math.floor(Math.random() * 2) + 4) : (Math.floor(Math.random() * 3) + 1);
+    const califVend = isPositive ? (Math.floor(Math.random() * 2) + 4) : (Math.floor(Math.random() * 3) + 1);
+    
+    const prodCommentList = isPositive ? comentariosPositivos : comentariosNegativos;
+    const prodComment = prodCommentList[Math.floor(Math.random() * prodCommentList.length)];
+    
+    const vendCommentList = isPositive ? ["Excelente vendedor, muy rápido.", "Todo perfecto, muy amable.", "Recomendado 100%"] : ["El vendedor no respondió mis mensajes.", "Tardó mucho en despachar.", "Pésima atención."];
+    const vendComment = vendCommentList[Math.floor(Math.random() * vendCommentList.length)];
+
+    const mockOrderId = `orden_masiva_${i}`;
+    
+    // Reseña producto
+    await prisma.resena.upsert({
+      where: {
+        idOrden_idComprador_tipoResena: {
+          idOrden: mockOrderId,
+          idComprador: CLERK_BUYER_ID,
+          tipoResena: TipoResena.PRODUCTO
+        }
+      },
+      update: {},
+      create: {
+        idResena: `resena_masiva_p_${i}`,
+        idOrden: mockOrderId,
+        idComprador: CLERK_BUYER_ID,
+        tipoResena: TipoResena.PRODUCTO,
+        idProducto: String((i % 5) + 1),
+        calificacion: califProd,
+        comentario: prodComment,
+        estado: EstadoResena.PUBLICA,
+      }
+    });
+
+    // Reseña vendedor
+    await prisma.resena.upsert({
+      where: {
+        idOrden_idComprador_tipoResena: {
+          idOrden: mockOrderId,
+          idComprador: CLERK_BUYER_ID,
+          tipoResena: TipoResena.VENDEDOR
+        }
+      },
+      update: {},
+      create: {
+        idResena: `resena_masiva_v_${i}`,
+        idOrden: mockOrderId,
+        idComprador: CLERK_BUYER_ID,
+        tipoResena: TipoResena.VENDEDOR,
+        idVendedor: targetSellerId,
+        calificacion: califVend,
+        comentario: vendComment,
+        estado: EstadoResena.PUBLICA,
+      }
+    });
+  }
+
+  // Update metrics for massive reviews (Productos)
+  for (let pid = 1; pid <= 5; pid++) {
+    const idProdString = String(pid);
+    const metricsProdMasiva = await prisma.resena.aggregate({
+      where: { idProducto: idProdString, tipoResena: TipoResena.PRODUCTO },
+      _avg: { calificacion: true },
+      _count: { _all: true }
+    });
+
+    await prisma.metricasProducto.upsert({
+      where: { idProducto: idProdString },
+      update: { 
+        promedioCalificacion: metricsProdMasiva._avg.calificacion || 0, 
+        cantidadResenas: metricsProdMasiva._count._all || 0
+      },
+      create: { 
+        idProducto: idProdString, 
+        promedioCalificacion: metricsProdMasiva._avg.calificacion || 0, 
+        cantidadResenas: metricsProdMasiva._count._all || 0
+      }
+    });
+  }
+
+  // Update metrics for massive reviews (Vendedor)
+  const metricsVendMasiva = await prisma.resena.aggregate({
+    where: { idVendedor: targetSellerId, tipoResena: TipoResena.VENDEDOR },
+    _avg: { calificacion: true },
+    _count: { _all: true }
+  });
+
+  await prisma.metricasVendedor.upsert({
+    where: { idVendedor: targetSellerId },
+    update: { 
+      promedioCalificacion: metricsVendMasiva._avg.calificacion || 0, 
+      cantidadResenas: metricsVendMasiva._count._all || 0
+    },
+    create: { 
+      idVendedor: targetSellerId, 
+      promedioCalificacion: metricsVendMasiva._avg.calificacion || 0, 
+      cantidadResenas: metricsVendMasiva._count._all || 0
+    }
+  });
+
+  // 5. Crear reportes masivos para probar paginación en moderación
+  console.log("Creando reportes masivos...");
+  for (let i = 0; i < 35; i++) {
+    const motivos = [MotivoReporte.INAPROPIADO, MotivoReporte.FALSO_NO_APLICA];
+    await prisma.reporteResena.create({
+      data: {
+        idResena: `resena_masiva_p_${i}`,
+        motivo: motivos[i % motivos.length],
+        idDenunciante: users[Math.floor(Math.random() * users.length)].clerkUserId,
+      }
+    });
+  }
 
   console.log('Seed completado con éxito. Base de datos poblada.');
 }

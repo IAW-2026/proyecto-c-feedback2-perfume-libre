@@ -113,6 +113,32 @@ const MOCKED_ORDERS_DB: Order[] = [
   }
 ];
 
+const nombresPerfumes = ["Chanel No. 5", "Dior Sauvage", "Carolina Herrera Good Girl", "Paco Rabanne Invictus", "YSL Libre"];
+
+// Añadir 40 órdenes masivas para paginación (estas serán reseñadas en seed.ts)
+for (let i = 0; i < 40; i++) {
+  const prodId = String((i % 5) + 1);
+  MOCKED_ORDERS_DB.push({
+    id_orden: `orden_masiva_${i}`,
+    id_comprador: CLERK_BUYER_ID,
+    id_vendedor: CLERK_SELLER_ID,
+    nombre_vendedor: "Seller Evaluador",
+    items: [{ id_producto: prodId, nombre_producto: nombresPerfumes[i % 5], imagen: `https://placehold.co/150x150?text=Perfume+${prodId}` }],
+    fecha_compra: "2026-06-01T10:00:00Z"
+  });
+}
+
+// Añadir 15 órdenes pendientes masivas para el buyer
+for (let i = 0; i < 15; i++) {
+  MOCKED_ORDERS_DB.push({
+    id_orden: `orden_pending_masiva_${i}`,
+    id_comprador: CLERK_BUYER_ID,
+    id_vendedor: CLERK_SELLER_ID,
+    nombre_vendedor: "Seller Evaluador",
+    items: [{ id_producto: "prod_dior_sauvage", nombre_producto: "Dior Sauvage", imagen: "https://placehold.co/150x150?text=Dior+Sauvage" }],
+    fecha_compra: "2026-06-05T10:00:00Z"
+  });
+}
 
 // Exportamos las constantes para usarlas en otros mocks si es necesario
 export { CLERK_BUYER_ID, CLERK_SELLER_ID, MOCKED_ORDERS_DB };
