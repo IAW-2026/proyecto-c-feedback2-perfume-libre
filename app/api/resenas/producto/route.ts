@@ -8,16 +8,23 @@ import { crearResenaSchema, actualizarResenaSchema } from "@/lib/validations";
 
 export async function POST(req: Request) {
   try {
-    const { userId: id_usuario } = await auth();
+    const { userId: clerkUserId } = await auth();
+    const apiKey = req.headers.get('api_key');
+    const isExternalApp = apiKey === process.env.FEEDBACK_API_KEY;
+
+    const body = await req.json();
+    let id_usuario = clerkUserId;
+
+    if (!id_usuario && isExternalApp) {
+      id_usuario = body.id_usuario;
+    }
 
     if (!id_usuario) {
       return NextResponse.json(
-        { estado: "error", mensaje: "No autorizado. Debe iniciar sesión." },
+        { estado: "error", mensaje: "No autorizado. Debe iniciar sesión o enviar id_usuario con api_key válida." },
         { status: 401 }
       );
     }
-
-    const body = await req.json();
     
     const validacion = crearResenaSchema.safeParse(body);
     if (!validacion.success) {
@@ -121,10 +128,18 @@ async function actualizarMetricasProducto(idProducto: string) {
 
 export async function PUT(req: Request) {
   try {
-    const { userId: id_usuario } = await auth();
-    if (!id_usuario) return NextResponse.json({ estado: "error", mensaje: "No autorizado" }, { status: 401 });
+    const { userId: clerkUserId } = await auth();
+    const apiKey = req.headers.get('api_key');
+    const isExternalApp = apiKey === process.env.FEEDBACK_API_KEY;
 
     const body = await req.json();
+    let id_usuario = clerkUserId;
+
+    if (!id_usuario && isExternalApp) {
+      id_usuario = body.id_usuario;
+    }
+
+    if (!id_usuario) return NextResponse.json({ estado: "error", mensaje: "No autorizado" }, { status: 401 });
     
     const validacion = actualizarResenaSchema.safeParse(body);
     if (!validacion.success) {
@@ -190,11 +205,19 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const { userId: id_usuario } = await auth();
-    if (!id_usuario) return NextResponse.json({ estado: "error", mensaje: "No autorizado" }, { status: 401 });
+    const { userId: clerkUserId } = await auth();
+    const apiKey = req.headers.get('api_key');
+    const isExternalApp = apiKey === process.env.FEEDBACK_API_KEY;
 
     const { searchParams } = new URL(req.url);
     const id_resena = searchParams.get("id_resena");
+
+    let id_usuario = clerkUserId;
+    if (!id_usuario && isExternalApp) {
+      id_usuario = searchParams.get("id_usuario");
+    }
+
+    if (!id_usuario) return NextResponse.json({ estado: "error", mensaje: "No autorizado" }, { status: 401 });
 
     if (!id_resena) {
       return NextResponse.json({ estado: "error", mensaje: "Falta id_resena" }, { status: 400 });

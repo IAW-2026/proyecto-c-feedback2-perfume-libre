@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const crearResenaSchema = z.object({
+  id_usuario: z.string().optional(),
   id_producto: z.string().optional(),
   id_vendedor: z.string().optional(),
   puntuacion: z.number().int().min(1, "La puntuación debe ser mínimo 1").max(5, "La puntuación debe ser máximo 5"),
@@ -27,6 +28,7 @@ export const crearResenaSchema = z.object({
 });
 
 export const actualizarResenaSchema = z.object({
+  id_usuario: z.string().optional(),
   id_resena: z.string().min(1, "El id de la reseña es obligatorio"),
   puntuacion: z.number().int().min(1, "La puntuación debe ser mínimo 1").max(5, "La puntuación debe ser máximo 5"),
   comentario: z.string().optional(),
